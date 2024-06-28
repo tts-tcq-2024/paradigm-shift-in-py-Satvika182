@@ -11,7 +11,7 @@ def battery_is_ok(temperature, soc, charge_rate):
             print(message)
             return False
 
-  return True
+    return True
 
 
 if __name__ == '__main__':
