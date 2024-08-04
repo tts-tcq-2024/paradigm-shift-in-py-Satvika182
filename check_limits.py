@@ -1,49 +1,57 @@
+def check_temperature(temperature):
+    limits = (0, 45)
+    tolerance = (limits[1] - limits[0]) * 0.05
+    
+    if temperature < limits[0] or temperature > limits[1]:
+        return 'Temperature is out of range!'
+    elif temperature <= limits[0] + tolerance:
+        return 'Warning: Temperature approaching low limit'
+    elif temperature >= limits[1] - tolerance:
+        return 'Warning: Temperature approaching high limit'
+    return None
+
+def check_soc(soc):
+    limits = (20, 80)
+    tolerance = (limits[1] - limits[0]) * 0.05
+    
+    if soc < limits[0] or soc > limits[1]:
+        return 'State of Charge is out of range!'
+    elif soc <= limits[0] + tolerance:
+        return 'Warning: Approaching discharge'
+    elif soc >= limits[1] - tolerance:
+        return 'Warning: Approaching charge-peak'
+    return None
+
+def check_charge_rate(charge_rate):
+    limit = 0.8
+    tolerance = limit * 0.05
+    
+    if charge_rate > limit:
+        return 'Charge rate is out of range!'
+    elif charge_rate >= limit - tolerance:
+        return 'Warning: Charge rate approaching limit'
+    return None
+
 def battery_is_ok(temperature, soc, charge_rate):
-    # Define limits and warning ranges
-    temperature_limit = (0, 45)
-    soc_limit = (20, 80)
-    charge_rate_limit = 0.8
+    # Check each parameter and collect warnings
+    temp_warning = check_temperature(temperature)
+    soc_warning = check_soc(soc)
+    charge_rate_warning = check_charge_rate(charge_rate)
     
-    # Calculate 5% tolerance
-    temperature_warning_tolerance = (temperature_limit[1] - temperature_limit[0]) * 0.05
-    soc_warning_tolerance = (soc_limit[1] - soc_limit[0]) * 0.05
-    charge_rate_warning_tolerance = charge_rate_limit * 0.05
+    # Print the appropriate messages
+    if temp_warning:
+        print(temp_warning)
+        if 'out of range' in temp_warning:
+            return False
+    if soc_warning:
+        print(soc_warning)
+        if 'out of range' in soc_warning:
+            return False
+    if charge_rate_warning:
+        print(charge_rate_warning)
+        if 'out of range' in charge_rate_warning:
+            return False
     
-    # Warnings enabled for each parameter
-    warning_config = {
-        'temperature': True,
-        'soc': True,
-        'charge_rate': True
-    }
-
-    # Check temperature
-    if temperature < temperature_limit[0] or temperature > temperature_limit[1]:
-        print('Temperature is out of range!')
-        return False
-    elif warning_config['temperature']:
-        if temperature_limit[0] <= temperature < temperature_limit[0] + temperature_warning_tolerance:
-            print('Warning: Temperature approaching low limit')
-        elif temperature_limit[1] - temperature_warning_tolerance < temperature <= temperature_limit[1]:
-            print('Warning: Temperature approaching high limit')
-
-    # Check State of Charge (SoC)
-    if soc < soc_limit[0] or soc > soc_limit[1]:
-        print('State of Charge is out of range!')
-        return False
-    elif warning_config['soc']:
-        if soc_limit[0] <= soc < soc_limit[0] + soc_warning_tolerance:
-            print('Warning: Approaching discharge')
-        elif soc_limit[1] - soc_warning_tolerance < soc <= soc_limit[1]:
-            print('Warning: Approaching charge-peak')
-
-    # Check charge rate
-    if charge_rate > charge_rate_limit:
-        print('Charge rate is out of range!')
-        return False
-    elif warning_config['charge_rate']:
-        if charge_rate_limit - charge_rate_warning_tolerance < charge_rate <= charge_rate_limit:
-            print('Warning: Charge rate approaching limit')
-
     return True
 
 if __name__ == '__main__':
