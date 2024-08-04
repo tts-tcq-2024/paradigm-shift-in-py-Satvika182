@@ -50,4 +50,3 @@ if __name__ == '__main__':
     monitor = BatteryMonitor()
     monitor.configure_warnings(temperature=False)  # Example configuration
     monitor.show_configurations()
-    # Perform checks here if needed
