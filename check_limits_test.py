@@ -26,7 +26,6 @@ class TestBatteryMonitor(unittest.TestCase):
     def test_warning_configuration(self):
         self.monitor.configure_warnings(temperature=False, soc=True, charge_rate=True)
         self.monitor.show_configurations()
-        # The output should show temperature warnings disabled
 
 if __name__ == '__main__':
     unittest.main()
