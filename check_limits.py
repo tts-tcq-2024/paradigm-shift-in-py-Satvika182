@@ -1,62 +1,80 @@
-from utils import is_within_range, is_approaching_limit, calculate_tolerance
+from utils import calculate_tolerance
 
 class BatteryMonitor:
     def __init__(self):
-        # Define parameter configurations using a dictionary
-        self.parameters = {
-            'temperature': {'min_val': 0, 'max_val': 45, 'tolerance': calculate_tolerance(45)},
-            'soc': {'min_val': 20, 'max_val': 80, 'tolerance': calculate_tolerance(80)},
-            'charge_rate': {'min_val': None, 'max_val': 0.8, 'tolerance': calculate_tolerance(0.8)},
+        # Define parameter boundaries and statuses using a list of tuples
+        self.parameter_ranges = {
+            'soc': [
+                (0, 20, 'LOW_SOC_BREACH'),
+                (21, 24, 'LOW_SOC_WARNING'),
+                (25, 75, 'NORMAL'),
+                (76, 80, 'HIGH_SOC_WARNING'),
+                (81, 100, 'HIGH_SOC_BREACH')
+            ],
+            'temperature': [
+                (0, 5, 'LOW_TEMP_BREACH'),
+                (6, 9, 'LOW_TEMP_WARNING'),
+                (10, 40, 'NORMAL'),
+                (41, 45, 'HIGH_TEMP_WARNING'),
+                (46, 100, 'HIGH_TEMP_BREACH')
+            ],
+            'charge_rate': [
+                (0, 0.7, 'NORMAL'),
+                (0.71, 0.8, 'HIGH_CR_WARNING'),
+                (0.81, 1.0, 'HIGH_CR_BREACH')
+            ]
         }
-        
-        # Initialize with all warnings enabled
-        self.warning_config = {key: True for key in self.parameters}
+
         self.warning_messages = {
-            'temperature': 'Temperature is out of range!',
-            'soc': 'State of Charge (SOC) is out of range!',
-            'charge_rate': 'Charge rate is out of range!'
+            'LOW_SOC_BREACH': 'State of Charge is critically low!',
+            'LOW_SOC_WARNING': 'State of Charge is approaching low!',
+            'HIGH_SOC_WARNING': 'State of Charge is approaching high!',
+            'HIGH_SOC_BREACH': 'State of Charge is critically high!',
+            'LOW_TEMP_BREACH': 'Temperature is critically low!',
+            'LOW_TEMP_WARNING': 'Temperature is approaching low!',
+            'HIGH_TEMP_WARNING': 'Temperature is approaching high!',
+            'HIGH_TEMP_BREACH': 'Temperature is critically high!',
+            'HIGH_CR_WARNING': 'Charge rate is approaching the limit!',
+            'HIGH_CR_BREACH': 'Charge rate is too high!',
+            'NORMAL': 'All parameters are within normal range.'
         }
 
-    def should_warn(self, limit_type, value):
-        param_config = self.parameters[limit_type]
-        return (self.warning_config.get(limit_type, False) and
-                is_approaching_limit(value, param_config['min_val'], param_config['max_val'], param_config['tolerance']))
+    def evaluate_parameter(self, value, param_type):
+        # Map the value to the appropriate status based on ranges
+        for min_val, max_val, status in self.parameter_ranges[param_type]:
+            if min_val <= value <= max_val:
+                return status
+        return 'UNKNOWN'  # If the value doesn't fit any known range
 
-    def check_limits(self, limit_type, value):
-        param_config = self.parameters[limit_type]
-        warning_needed = self.should_warn(limit_type, value)
-        value_ok = is_within_range(value, param_config['min_val'], param_config['max_val'])
-        return value_ok, warning_needed
+    def translate_status_to_message(self, status):
+        # Translate the status to a corresponding warning message
+        return self.warning_messages.get(status, 'Unknown status')
 
-    def handle_warnings(self, is_parameter_within_limits, is_approaching_limit_alert, parameter_name):
-        if is_approaching_limit_alert:
-            print(f'Warning: Approaching {parameter_name} limit')
-        elif not is_parameter_within_limits:
-            print(self.warning_messages.get(parameter_name.lower(), 'Unknown parameter is out of range!'))
+    def check_battery_status(self, temperature, soc, charge_rate):
+        temp_status = self.evaluate_parameter(temperature, 'temperature')
+        soc_status = self.evaluate_parameter(soc, 'soc')
+        charge_rate_status = self.evaluate_parameter(charge_rate, 'charge_rate')
 
-    def battery_is_ok(self, temperature, soc, charge_rate):
-        temp_ok, temp_warning = self.check_limits('temperature', temperature)
-        soc_ok, soc_warning = self.check_limits('soc', soc)
-        charge_rate_ok, charge_rate_warning = self.check_limits('charge_rate', charge_rate)
+        # Chain the transformations
+        temp_message = self.translate_status_to_message(temp_status)
+        soc_message = self.translate_status_to_message(soc_status)
+        charge_rate_message = self.translate_status_to_message(charge_rate_status)
 
-        self.handle_warnings(temp_ok, temp_warning, 'Temperature')
-        self.handle_warnings(soc_ok, soc_warning, 'State of Charge (SOC)')
-        self.handle_warnings(charge_rate_ok, charge_rate_warning, 'Charge rate')
+        # Output the messages
+        self.output_message(temp_message)
+        self.output_message(soc_message)
+        self.output_message(charge_rate_message)
 
-        return temp_ok and soc_ok and charge_rate_ok
+        # Determine overall battery status
+        overall_status = all(status == 'NORMAL' for status in [temp_status, soc_status, charge_rate_status])
+        return overall_status
 
-    def configure_warnings(self, temperature=True, soc=True, charge_rate=True):
-        self.warning_config['temperature'] = temperature
-        self.warning_config['soc'] = soc
-        self.warning_config['charge_rate'] = charge_rate
-
-    def show_configurations(self):
-        print('Current warning configurations:')
-        for param, enabled in self.warning_config.items():
-            status = 'Enabled' if enabled else 'Disabled'
-            print(f'{param.capitalize()}: {status}')
+    def output_message(self, message):
+        # Output the message, this can be modified to log, print, or send elsewhere
+        print(message)
 
 if __name__ == '__main__':
     monitor = BatteryMonitor()
-    monitor.configure_warnings(temperature=False)  # Example configuration
-    monitor.show_configurations()
+    # Example values
+    overall_status = monitor.check_battery_status(temperature=42, soc=78, charge_rate=0.76)
+    print(f'Overall Battery Status: {"OK" if overall_status else "NOT OK"}')
