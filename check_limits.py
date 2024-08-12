@@ -9,13 +9,17 @@ class BatteryMonitor:
             'soc': 'State of Charge (SOC) is out of range!',
             'charge_rate': 'Charge rate is out of range!'
         }
+        # Assign the imported functions to class attributes
+        self.is_within_range = is_within_range
+        self.is_approaching_limit = is_approaching_limit
+        self.calculate_tolerance = calculate_tolerance
 
     def should_warn(self, limit_type, value, min_val, max_val, tolerance):
-        return self.warning_config.get(limit_type, False) and is_approaching_limit(value, min_val, max_val, tolerance)
+        return self.warning_config.get(limit_type, False) and self.is_approaching_limit(value, min_val, max_val, tolerance)
 
     def check_limits(self, value, min_val, max_val, tolerance, limit_type):
         warning_needed = self.should_warn(limit_type, value, min_val, max_val, tolerance)
-        value_ok = is_within_range(value, min_val, max_val)
+        value_ok = self.is_within_range(value, min_val, max_val)
         return value_ok, warning_needed
 
     def handle_warnings(self, is_parameter_within_limits, is_approaching_limit_alert, parameter_name):
@@ -25,9 +29,9 @@ class BatteryMonitor:
             print(self.warning_messages.get(parameter_name.lower(), 'Unknown parameter is out of range!'))
 
     def battery_is_ok(self, temperature, soc, charge_rate):
-        temp_ok, temp_warning = self.check_limits(temperature, 0, 45, calculate_tolerance(45), 'temperature')
-        soc_ok, soc_warning = self.check_limits(soc, 20, 80, calculate_tolerance(80), 'soc')
-        charge_rate_ok, charge_rate_warning = self.check_limits(charge_rate, None, 0.8, calculate_tolerance(0.8), 'charge_rate')
+        temp_ok, temp_warning = self.check_limits(temperature, 0, 45, self.calculate_tolerance(45), 'temperature')
+        soc_ok, soc_warning = self.check_limits(soc, 20, 80, self.calculate_tolerance(80), 'soc')
+        charge_rate_ok, charge_rate_warning = self.check_limits(charge_rate, None, 0.8, self.calculate_tolerance(0.8), 'charge_rate')
 
         self.handle_warnings(temp_ok, temp_warning, 'Temperature')
         self.handle_warnings(soc_ok, soc_warning, 'State of Charge (SOC)')
