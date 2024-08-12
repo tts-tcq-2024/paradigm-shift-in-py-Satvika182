@@ -1,10 +1,18 @@
 def is_within_range(value, min_val, max_val):
-    return (min_val is None or value >= min_val) and (max_val is None or value <= max_val)
+    if min_val is not None and value < min_val:
+        return False
+    if max_val is not None and value > max_val:
+        return False
+    return True
 
 def is_approaching_limit(value, min_val, max_val, tolerance):
-    lower_approach = min_val is not None and min_val <= value <= min_val + tolerance
-    upper_approach = max_val is not None and max_val - tolerance <= value <= max_val
-    return lower_approach or upper_approach
+    if min_val is not None:
+        if min_val <= value <= min_val + tolerance:
+            return True
+    if max_val is not None:
+        if max_val - tolerance <= value <= max_val:
+            return True
+    return False
 
 def calculate_tolerance(reference_value, tolerance_percentage=5):
     return reference_value * tolerance_percentage / 100
